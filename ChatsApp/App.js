@@ -6,49 +6,58 @@
  */
 
 import React, {useEffect} from 'react';
-import {Text} from 'react-native';
 import ChatListItem from './src/components/ChatListItem';
 import ChatsScreens from './src/screens/ChatsScreen/ChatsScreens';
-import ChatScreen from './src/screens/ChatScreen';
 import InputBox from './src/components/InputBox';
 import Navigator from './src/navigation';
-import {withAuthenticator} from 'aws-amplify-react-native';
-import {Amplify, Auth, API, graphqlOperation} from 'aws-amplify';
+import {withAuthenticator, AmplifyTheme} from 'aws-amplify-react-native';
+import {Amplify, Auth, API, graphqlOperation, Notifications} from 'aws-amplify';
 import awsconfig from './src/aws-exports';
 import {getUser} from './src/graphql/queries';
 import {createUser} from './src/graphql/mutations';
+import {Provider as PaperProvider} from 'react-native-paper';
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
+import Analytics from '@aws-amplify/analytics';
+import PushNotification from '@aws-amplify/pushnotification';
+import {PubSub} from 'aws-amplify';
 Amplify.configure({...awsconfig, Analytics: {disabled: true}});
-
+Notifications.Push.enable();
 function App() {
   useEffect(() => {
-    const syncUser = async () => {
-      // get Auth user
-      const authUser = await Auth.currentAuthenticatedUser({
-        bypassCache: true,
-      });
-
-      // query the database using Auth user id (sub)
-      const userData = await API.graphql(
-        graphqlOperation(getUser, {id: authUser.attributes.sub}),
-      );
-
-      if (userData.data.getUser) {
-        console.log('User already exists in DB');
+    const checkPermissions = async () => {
+      const status = await Notifications.Push.getPermissionStatus();
+      if (status === 'DENIED') {
+        myFunctionToGracefullyDegradeMyApp();
         return;
       }
-      // if there is no users in db, create one
-      const newUser = {
-        id: authUser.attributes.sub,
-        name: authUser.attributes.phone_number,
-        status: 'Hey, I am using WhatsApp',
-      };
-
-      await API.graphql(graphqlOperation(createUser, {input: newUser}));
+      if (status === 'SHOULD_REQUEST') {
+        await Notifications.Push.requestPermissions();
+      }
+      if (status === 'SHOULD_EXPLAIN_THEN_REQUEST') {
+        await myFunctionExplainingPermissionsRequest();
+        await Notifications.Push.requestPermissions();
+      }
     };
 
-    syncUser();
+    const tokenReceivedHandler = token => {
+      console.log('Received token:', token);
+    };
+
+    checkPermissions();
+    const tokenListener =
+      Notifications.Push.onTokenReceived(tokenReceivedHandler);
+
+    return () => {
+      tokenListener.remove();
+    };
   }, []);
-  return <Navigator />;
+
+  return (
+    <PaperProvider>
+      <Navigator />
+    </PaperProvider>
+  );
 }
 
-export default withAuthenticator(App);
+export default App;

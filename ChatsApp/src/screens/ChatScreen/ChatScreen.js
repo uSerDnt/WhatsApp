@@ -8,16 +8,21 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import React, {useEffect, useState} from 'react';
-import bg from '../../assets/images/BG.png';
-import Message from '../components/Message';
+import bg from '../../../assets/images/BG.png';
+import Message from '../../components/Message';
 // import messages from '../../assets/data/messages.json';
-import InputBox from '../components/InputBox';
+import InputBox from '../../components/InputBox';
 import {Platform} from 'react-native';
 import {useRoute, useNavigation} from '@react-navigation/native';
 import {API, graphqlOperation} from 'aws-amplify';
-import {getChatRoom, listMessagesByChatRoom} from '../graphql/queries';
-import {onCreateMessage, onUpdateChatRoom} from '../graphql/subscriptions';
+import {getChatRoom} from '../../graphql/queries';
+import {
+  onCreateAttachment,
+  onCreateMessage,
+  onUpdateChatRoom,
+} from '../../graphql/subscriptions';
 import Feather from 'react-native-vector-icons/Feather';
+import {listMessagesByChatRoom} from './ChatScreenQueries';
 const ChatScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
@@ -64,7 +69,40 @@ const ChatScreen = () => {
       },
       error: err => console.warn(err),
     });
-    return () => subscription.unsubscribe();
+    //sub attachments
+    const subscriptionAttachments = API.graphql(
+      graphqlOperation(onCreateAttachment, {
+        filter: {chatroomID: {eq: chatroomID}},
+      }),
+    ).subscribe({
+      next: ({value}) => {
+        const newAttachment = value.data.onCreateAttachment;
+        setMessages(existingMessages => {
+          // const messageToUpdate = existingMessages.find(
+          //   em => em.id === newAttachment.messageID,
+          // );
+          const messageToUpdate =
+            existingMessages &&
+            existingMessages.find(em => em.id === newAttachment.messageID);
+          if (!messageToUpdate) {
+            return existingMessages;
+          }
+          if (!messageToUpdate?.Attachments?.items) {
+            messageToUpdate.Attachments.items = [];
+          }
+          messageToUpdate.Attachments.items.push(newAttachment);
+
+          return existingMessages.map(m =>
+            m.id === messageToUpdate.id ? messageToUpdate : m,
+          );
+        });
+      },
+      error: err => console.warn(err),
+    });
+    return () => {
+      subscription.unsubscribe();
+      subscriptionAttachments.unsubscribe();
+    };
   }, [chatroomID]);
 
   useEffect(() => {
@@ -84,6 +122,7 @@ const ChatScreen = () => {
     return <ActivityIndicator />;
   }
   // console.log(JSON.stringify(chatRoom));
+  // console.log(JSON.stringify(messages, null, 2));
   return (
     <KeyboardAvoidingView style={[styles.bg, {paddingBottom: 40}]}>
       <ImageBackground source={bg} style={styles.bg}>

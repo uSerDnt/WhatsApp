@@ -1,0 +1,141 @@
+enum StatusUser {
+  SUSPEND
+  ACTIVE
+}
+
+type ShortVideo @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  videoUri: String!
+  content: String
+  User: User @hasOne
+  Song: Song @hasOne
+}
+
+type Song @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String!
+  imageUri: String
+}
+
+type Notification @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  userID: ID! @index(name: "byUser")
+  action: NotificationAction!
+  user: User @belongsTo(fields: ["userID"])
+}
+
+enum NotificationAction {
+  POST_CREATED
+  POST_LIKED
+  POST_COMMENTED
+}
+
+type Friend @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  status: FriendStatus!
+  requesterID: ID! @index(name: "byRequester")
+  requesteeID: ID! @index(name: "byRequestee")
+  createdAt: AWSDateTime!
+  requester: User @belongsTo(fields: ["requesterID"])
+  requestee: User @belongsTo(fields: ["requesteeID"])
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  NOT_FRIENDS
+}
+
+type Share @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  postID: ID! @index(name: "byPost", sortKeyFields: ["createdAt"], queryField: "listSharesByPost")
+  userID: ID! @index(name: "byUser")
+  createdAt: AWSDateTime!
+  user: User @belongsTo(fields: ["userID"])
+  post: Post @belongsTo(fields: ["postID"])
+  Content: String
+}
+
+type Comment @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  postID: ID! @index(name: "byPost", sortKeyFields: ["createdAt"], queryField: "listCommentsByPost")
+  userID: ID! @index(name: "byUser")
+  createdAt: AWSDateTime!
+  user: User @belongsTo(fields: ["userID"])
+  post: Post @belongsTo(fields: ["postID"])
+  content: String
+}
+
+type Like @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  postID: ID! @index(name: "byPost", sortKeyFields: ["createdAt"], queryField: "listLikesByPost")
+  userID: ID! @index(name: "byUser")
+  createdAt: AWSDateTime!
+  user: User @belongsTo(fields: ["userID"])
+  post: Post @belongsTo(fields: ["postID"])
+}
+
+type Post @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  content: String
+  image: String
+  User: User @hasOne
+  Likes: [Like] @hasMany(indexName: "byPost", fields: ["id"])
+  Comments: [Comment] @hasMany(indexName: "byPost", fields: ["id"])
+  Shares: [Share] @hasMany(indexName: "byPost", fields: ["id"])
+}
+
+enum AttachmentType {
+  IMAGE
+  VIDEO
+}
+
+type Attachment @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  storageKey: String!
+  type: AttachmentType!
+  width: Int
+  height: Int
+  duration: Int
+  chatroomID: ID! @index(name: "byChatRoom")
+  messageID: ID! @index(name: "byMessage")
+}
+
+type ChatRoom @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String
+  image: String
+  Messages: [Message] @hasMany(indexName: "byChatRoom", fields: ["id"])
+  users: [User] @manyToMany(relationName: "UserChatRoom")
+  LastMessage: Message @hasOne
+  Attachments: [Attachment] @hasMany(indexName: "byChatRoom", fields: ["id"])
+}
+
+type Message @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  createdAt: AWSDateTime!
+  text: String!
+  chatroomID: ID! @index(name: "byChatRoom", sortKeyFields: ["createdAt"], queryField: "listMessagesByChatRoom")
+  images: [String]
+  Attachments: [Attachment] @hasMany(indexName: "byMessage", fields: ["id"])
+  userID: ID! @index(name: "byUser")
+}
+
+type User @model @auth(rules: [{allow: public}]) {
+  id: ID!
+  name: String!
+  status: String
+  image: String
+  ChatRooms: [ChatRoom] @manyToMany(relationName: "UserChatRoom")
+  Messages: [Message] @hasMany(indexName: "byUser", fields: ["id"])
+  Likes: [Like] @hasMany(indexName: "byUser", fields: ["id"])
+  Comments: [Comment] @hasMany(indexName: "byUser", fields: ["id"])
+  Shares: [Share] @hasMany(indexName: "byUser", fields: ["id"])
+  gender: String
+  birthday: String
+  friendRequestsSent: [Friend] @hasMany(indexName: "byRequester", fields: ["id"])
+  friendRequestsReceived: [Friend] @hasMany(indexName: "byRequestee", fields: ["id"])
+  Notifications: [Notification] @hasMany(indexName: "byUser", fields: ["id"])
+  state: StatusUser
+}
+ 

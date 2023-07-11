@@ -1,0 +1,37 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-chatsapp-dev-231116-authRole",
+      "UnauthRoleArn": "arn:aws:iam::862767035147:role/amplify-chatsapp-dev-231116-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::862767035147:role/amplify-chatsapp-dev-231116-authRole",
+      "Region": "ap-southeast-1",
+      "DeploymentBucketName": "amplify-chatsapp-dev-231116-deployment",
+      "UnauthRoleName": "amplify-chatsapp-dev-231116-unauthRole",
+      "StackName": "amplify-chatsapp-dev-231116",
+      "StackId": "arn:aws:cloudformation:ap-southeast-1:862767035147:stack/amplify-chatsapp-dev-231116/d43a3520-d55e-11ed-9035-02dd64a061dc",
+      "AmplifyAppId": "d25fbwfda3b92h"
+    },
+    "categories": {
+      "analytics": {
+        "Pinpoint": {
+          "Name": "chatsapp-dev",
+          "Id": "1ae1064ae5d04fd6a284ccb0ec87e7aa",
+          "Region": "ap-southeast-1"
+        }
+      },
+      "notifications": {
+        "Pinpoint": {
+          "Name": "chatsapp-dev",
+          "Id": "1ae1064ae5d04fd6a284ccb0ec87e7aa",
+          "Region": "ap-southeast-1"
+        }
+      },
+      "auth": {
+        "ChatsApp": {}
+      },
+      "storage": {
+        "s3chatsappstorage05941b4e": {}
+      }
+    }
+  }
+}

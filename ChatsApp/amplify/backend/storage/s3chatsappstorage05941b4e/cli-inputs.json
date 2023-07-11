@@ -1,0 +1,12 @@
+{
+  "resourceName": "s3chatsappstorage05941b4e",
+  "bucketName": "chatsapp-storage-05941b4e",
+  "policyUUID": "24949419",
+  "storageAccess": "auth",
+  "guestAccess": [],
+  "authAccess": [
+    "CREATE_AND_UPDATE",
+    "READ",
+    "DELETE"
+  ]
+}

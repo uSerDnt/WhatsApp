@@ -10,7 +10,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 const AddContactToGroup = () => {
   const [users, setUsers] = useState([]);
   const [selectedUserIds, setSelectedUserIds] = useState([]);
-
+  const [searchTerm, setSearchTerm] = useState('');
   const navigation = useNavigation();
   const route = useRoute();
   const chatRoom = route.params.chatRoom;

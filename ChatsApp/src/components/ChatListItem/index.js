@@ -1,34 +1,40 @@
-import {Image, StyleSheet, Text, View, Pressable} from 'react-native';
-import React, {useEffect, useState} from 'react';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Alert,
+  TouchableOpacity,
+} from 'react-native';
+import React, {useEffect, useImperativeHandle, useState} from 'react';
 import {Auth, API, graphqlOperation} from 'aws-amplify';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import dayjs from 'dayjs';
 import {useNavigation} from '@react-navigation/native';
 dayjs.extend(relativeTime);
 import {onUpdateChatRoom} from '../../graphql/subscriptions';
-const ChatListItem = ({chat}) => {
+import {S3Image} from 'aws-amplify-react-native/dist/Storage';
+const ChatListItem = ({chat, currentUser, version}, ref) => {
   const navigation = useNavigation();
   const [user, setUser] = useState(null);
   const [chatRoom, setChatRoom] = useState(chat);
+
+  useEffect(() => setChatRoom(chat), [chat]);
   useEffect(() => {
-    const fetchUser = async () => {
-      const authUser = await Auth.currentAuthenticatedUser();
+    const userItem =
+      chatRoom.users.items &&
+      chatRoom.users.items.find(item => item.user.id !== currentUser);
 
-      // Loop through chat.users.items and find a user that is not us (Authenticated user)
-      const userItem = chatRoom.users.items.find(
-        item => item.user.id !== authUser.attributes.sub,
-      );
-      setUser(userItem?.user);
-    };
+    setUser(userItem?.user);
+  }, [currentUser, chatRoom]);
 
-    fetchUser();
-  }, []);
-  //fetch chatRoom
   useEffect(() => {
     const subscription = API.graphql(
       graphqlOperation(onUpdateChatRoom, {filter: {id: {eq: chat.id}}}),
     ).subscribe({
       next: ({value}) => {
+        console.log('update', value);
         setChatRoom(cr => ({
           ...(cr || {}),
           ...value.data.onUpdateChatRoom,
@@ -42,9 +48,10 @@ const ChatListItem = ({chat}) => {
   const handleClick = () => {
     navigation.navigate('Chat', {id: chatRoom.id, name: user?.name});
   };
+
   return (
-    <Pressable onPress={handleClick} style={styles.container}>
-      <Image source={{uri: user?.image}} style={styles.image} />
+    <TouchableOpacity onPress={handleClick} style={styles.container}>
+      <S3Image imgKey={user?.image} style={styles.image} />
       <View style={styles.content}>
         <View style={styles.row}>
           <Text style={styles.name} numberOfLines={1}>
@@ -60,11 +67,11 @@ const ChatListItem = ({chat}) => {
           {chatRoom.LastMessage?.text}
         </Text>
       </View>
-    </Pressable>
+    </TouchableOpacity>
   );
 };
 
-export default ChatListItem;
+export default React.forwardRef(ChatListItem);
 
 const styles = StyleSheet.create({
   container: {

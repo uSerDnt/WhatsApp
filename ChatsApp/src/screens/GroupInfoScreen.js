@@ -33,7 +33,6 @@ const ChatRoomInfo = () => {
 
   useEffect(() => {
     fetchChatRoom();
-
     // Subscribe to onUpdateChatRoom
     const subscription = API.graphql(
       graphqlOperation(onUpdateChatRoom, {
